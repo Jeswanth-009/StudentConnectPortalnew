@@ -29,8 +29,12 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !replyContent.trim()) return;
+    if (!user || !replyContent.trim()) {
+      console.log('Reply validation failed:', { user: !!user, content: replyContent.trim() });
+      return;
+    }
 
+    console.log('Submitting reply:', { postId: post.id, content: replyContent.trim() });
     setIsSubmitting(true);
     try {
       await addReply(post.id, {
@@ -42,6 +46,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       });
       setReplyContent('');
       setShowReplyForm(false);
+      console.log('Reply submitted successfully');
     } catch (error) {
       console.error('Failed to add reply:', error);
     } finally {
@@ -62,6 +67,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   };
 
   const handleViewProfile = () => {
+    console.log('Navigating to profile:', post.authorId);
     navigate(`/profile/${post.authorId}`);
   };
 
@@ -218,15 +224,13 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
       {/* Actions */}
       <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
-        {post.type === 'thread' && (
-          <button
-            onClick={() => setShowReplyForm(!showReplyForm)}
-            className="flex items-center gap-2 text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Reply ({post.replies?.length || 0})
-          </button>
-        )}
+        <button
+          onClick={() => setShowReplyForm(!showReplyForm)}
+          className="flex items-center gap-2 text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Reply ({post.replies?.length || 0})
+        </button>
         
         <button
           onClick={handleViewProfile}
@@ -238,7 +242,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       </div>
 
       {/* Replies */}
-      {post.type === 'thread' && post.replies && post.replies.length > 0 && (
+      {post.replies && post.replies.length > 0 && (
         <div className="mt-4 space-y-3">
           {post.replies.map((reply) => (
             <div key={reply.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">

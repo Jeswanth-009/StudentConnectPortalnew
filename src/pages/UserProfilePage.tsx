@@ -134,7 +134,7 @@ const UserProfilePage: React.FC = () => {
 
             {/* Bio */}
             <div className="mb-6">
-              <p className="text-gray-700 leading-relaxed">{viewedUser.bio}</p>
+              <p className="text-gray-700 leading-relaxed">{user.bio}</p>
             </div>
 
             {/* Info Grid */}
@@ -150,7 +150,7 @@ const UserProfilePage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium text-gray-900">{viewedUser.email}</p>
+                      <p className="font-medium text-gray-900">{user.email}</p>
                     </div>
                   </div>
 
@@ -160,7 +160,7 @@ const UserProfilePage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Joined</p>
-                      <p className="font-medium text-gray-900">{viewedUser.joinedDate}</p>
+                      <p className="font-medium text-gray-900">{new Date(user.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
 
@@ -170,7 +170,7 @@ const UserProfilePage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Location</p>
-                      <p className="font-medium text-gray-900">{viewedUser.location}</p>
+                      <p className="font-medium text-gray-900">Not specified</p>
                     </div>
                   </div>
 
