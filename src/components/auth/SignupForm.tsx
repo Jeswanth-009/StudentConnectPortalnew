@@ -54,7 +54,9 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
       });
       navigate('/dashboard');
     } catch (err) {
-      setError('Failed to create account. Please try again.');
+      console.error('Signup error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create account. Please try again.';
+      setError(errorMessage);
     }
   };
 

@@ -1,4 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://studentconnectportalnew.onrender.com';
+
+// Debug: Log the API URL being used
+console.log('API_BASE_URL:', API_BASE_URL);
 
 interface ApiResponse<T> {
   data?: T;
@@ -17,6 +20,12 @@ class ApiService {
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ detail: 'An error occurred' }));
+      console.error('API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        errorData
+      });
       throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
     return response.json();
@@ -39,11 +48,23 @@ class ApiService {
     password: string;
     bio?: string;
   }) {
+    console.log('Signup attempt:', {
+      url: `${API_BASE_URL}/auth/signup`,
+      userData: { ...userData, password: '[HIDDEN]' }
+    });
+    
     const response = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
+    
+    console.log('Signup response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
     return this.handleResponse(response);
   }
 
