@@ -9,14 +9,11 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import os
-import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+import asyncio
 import cloudinary
 import cloudinary.uploader
 from bson import ObjectId
 import secrets
-import asyncio
 
 # Initialize FastAPI
 app = FastAPI(title="StudyConnect API", version="1.0.0")
@@ -26,7 +23,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173", 
-        "https://your-frontend-domain.vercel.app",
+        "https://student-connect-portalnew.vercel.app",
         "https://*.onrender.com",
         os.getenv("FRONTEND_URL", "http://localhost:5173")
     ],
@@ -40,8 +37,10 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb+srv://username:password@cluster.mongodb.net/studyconnect")
-GMAIL_EMAIL = os.getenv("GMAIL_EMAIL", "your-email@gmail.com")
-GMAIL_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "your-app-password")
+
+# Email configuration (temporarily disabled)
+# GMAIL_EMAIL = os.getenv("GMAIL_EMAIL", "your-email@gmail.com")
+# GMAIL_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "your-app-password")
 
 # Cloudinary configuration
 cloudinary.config(
@@ -148,38 +147,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return user
 
 def send_reset_email(email: str, reset_token: str):
-    try:
-        msg = MimeMultipart()
-        msg['From'] = GMAIL_EMAIL
-        msg['To'] = email
-        msg['Subject'] = "Password Reset - StudyConnect"
-        
-        reset_link = f"https://your-frontend-domain.vercel.app/reset-password?token={reset_token}"
-        body = f"""
-        <html>
-        <body>
-            <h2>Password Reset Request</h2>
-            <p>You requested a password reset for your StudyConnect account.</p>
-            <p>Click the link below to reset your password:</p>
-            <a href="{reset_link}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this, please ignore this email.</p>
-        </body>
-        </html>
-        """
-        
-        msg.attach(MimeText(body, 'html'))
-        
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(GMAIL_EMAIL, GMAIL_PASSWORD)
-        text = msg.as_string()
-        server.sendmail(GMAIL_EMAIL, email, text)
-        server.quit()
-        return True
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
+    # Email functionality temporarily disabled for deployment
+    # TODO: Implement email service (SendGrid, AWS SES, etc.)
+    print(f"Password reset requested for {email}. Reset token: {reset_token}")
+    print(f"Reset link would be: https://student-connect-portalnew.vercel.app/reset-password?token={reset_token}")
+    
+    # For now, we'll just log the reset token
+    # In production, you should implement proper email service
+    return True  # Return True to allow password reset flow to continue
 
 # Routes
 @app.get("/")

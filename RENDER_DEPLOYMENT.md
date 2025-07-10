@@ -33,7 +33,7 @@ MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/studyconnect
 CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
 CLOUDINARY_API_KEY=your-cloudinary-api-key
 CLOUDINARY_API_SECRET=your-cloudinary-api-secret
-FRONTEND_URL=https://your-frontend-app.onrender.com
+FRONTEND_URL=https://student-connect-portalnew.vercel.app
 ```
 
 **Important**: Generate a strong SECRET_KEY using:
