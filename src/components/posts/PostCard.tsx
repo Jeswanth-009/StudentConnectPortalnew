@@ -49,6 +49,18 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
   };
 
+  const handleDownload = () => {
+    if (post.documentUrl) {
+      const link = document.createElement('a');
+      link.href = post.documentUrl;
+      link.download = post.documentName || 'document';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   const handleViewProfile = () => {
     navigate(`/profile/${post.authorId}`);
   };
@@ -98,11 +110,19 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
             onClick={handleViewProfile}
             className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
           >
-            <img
-              src={post.authorProfilePicture || `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400`}
-              alt={post.authorName}
-              className="h-10 w-10 rounded-full object-cover"
-            />
+            {post.authorProfilePicture ? (
+              <img
+                src={post.authorProfilePicture}
+                alt={post.authorName}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                <span className="text-gray-600 font-medium text-sm">
+                  {post.authorName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
             <div className="text-left">
               <p className="font-medium text-gray-900">{post.authorName}</p>
               <p className="text-sm text-gray-500">@{post.authorUsername}</p>
@@ -153,7 +173,10 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                     {post.documentName || 'Document'}
                   </span>
                 </div>
-                <button className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                <button 
+                  onClick={handleDownload}
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                >
                   <Download className="h-4 w-4" />
                   Download
                 </button>
@@ -220,12 +243,25 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {post.replies.map((reply) => (
             <div key={reply.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
-                <img
-                  src={reply.authorProfilePicture || `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400`}
-                  alt={reply.authorName}
-                  className="h-6 w-6 rounded-full object-cover"
-                />
-                <span className="text-sm font-medium text-gray-900">{reply.authorName}</span>
+                {reply.authorProfilePicture ? (
+                  <img
+                    src={reply.authorProfilePicture}
+                    alt={reply.authorName}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span className="text-gray-600 font-medium text-xs">
+                      {reply.authorName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <button
+                  onClick={() => navigate(`/profile/${reply.authorId}`)}
+                  className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                >
+                  {reply.authorName}
+                </button>
                 <span className="text-xs text-gray-500">@{reply.authorUsername}</span>
                 <span className="text-xs text-gray-500">•</span>
                 <span className="text-xs text-gray-500">{formatDate(reply.createdAt)}</span>

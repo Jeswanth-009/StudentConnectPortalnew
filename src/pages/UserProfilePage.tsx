@@ -1,29 +1,71 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Calendar, MapPin, Link, MessageCircle, UserPlus } from 'lucide-react';
+import { apiService } from '../services/api';
+
+interface UserProfile {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  bio: string;
+  profile_picture?: string;
+  created_at: string;
+  posts_count: number;
+}
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock user data - in real app, fetch based on userId
-  const viewedUser = {
-    id: userId || '2',
-    name: 'Jane Smith',
-    username: 'janesmith',
-    email: 'jane@example.com',
-    bio: 'Frontend Developer with 5+ years of experience. Passionate about React, TypeScript, and creating beautiful user interfaces. Always happy to help fellow developers!',
-    profilePicture: `https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=400`,
-    joinedDate: 'December 2023',
-    location: 'San Francisco, CA',
-    website: 'https://janesmith.dev',
-    stats: {
-      posts: 24,
-      comments: 87,
-      notes: 15,
-      jobs: 6
-    }
-  };
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userId) return;
+      
+      try {
+        setLoading(true);
+        const userData = await apiService.getUserProfile(userId);
+        setUser(userData);
+      } catch (err) {
+        setError('Failed to load user profile');
+        console.error('Error fetching user:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'User not found'}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
@@ -39,8 +81,8 @@ const UserProfilePage: React.FC = () => {
               Back
             </button>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">{viewedUser.name}</h1>
-              <p className="text-sm text-gray-500">@{viewedUser.username}</p>
+              <h1 className="text-lg font-semibold text-gray-900">{user.name}</h1>
+              <p className="text-sm text-gray-500">@{user.username}</p>
             </div>
           </div>
         </div>
@@ -56,17 +98,25 @@ const UserProfilePage: React.FC = () => {
           <div className="px-6 pb-6">
             {/* Profile Picture and Basic Info */}
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12 mb-6">
-              <img
-                src={viewedUser.profilePicture}
-                alt={viewedUser.name}
-                className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
-              />
+              {user.profile_picture ? (
+                <img
+                  src={user.profile_picture}
+                  alt={user.name}
+                  className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-gray-300 border-4 border-white shadow-lg flex items-center justify-center">
+                  <span className="text-gray-600 font-bold text-2xl">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
 
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{viewedUser.name}</h1>
-                    <p className="text-gray-600">@{viewedUser.username}</p>
+                    <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
+                    <p className="text-gray-600">@{user.username}</p>
                   </div>
                   <div className="flex items-center gap-2 mt-2 sm:mt-0">
                     <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
@@ -130,14 +180,7 @@ const UserProfilePage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Website</p>
-                      <a
-                        href={viewedUser.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-blue-600 hover:text-blue-800"
-                      >
-                        {viewedUser.website}
-                      </a>
+                      <p className="font-medium text-gray-900">Not specified</p>
                     </div>
                   </div>
                 </div>
@@ -149,63 +192,14 @@ const UserProfilePage: React.FC = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <p className="text-2xl font-bold text-blue-600">{viewedUser.stats.posts}</p>
+                    <p className="text-2xl font-bold text-blue-600">{user.posts_count}</p>
                     <p className="text-sm text-blue-800">Posts Created</p>
                   </div>
                   
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <p className="text-2xl font-bold text-green-600">{viewedUser.stats.comments}</p>
+                    <p className="text-2xl font-bold text-green-600">0</p>
                     <p className="text-sm text-green-800">Comments</p>
                   </div>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                    <p className="text-2xl font-bold text-purple-600">{viewedUser.stats.notes}</p>
-                    <p className="text-sm text-purple-800">Notes Shared</p>
-                  </div>
-                  
-                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <p className="text-2xl font-bold text-orange-600">{viewedUser.stats.jobs}</p>
-                    <p className="text-sm text-orange-800">Jobs Posted</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Posts */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Posts</h3>
-              <div className="space-y-3">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="bg-blue-100 p-1 rounded">
-                      <MessageCircle className="h-3 w-3 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">Frontend Development Best Practices</span>
-                  </div>
-                  <p className="text-sm text-gray-600">What are your favorite tools and techniques for modern frontend development?</p>
-                  <p className="text-xs text-gray-500 mt-2">2 days ago</p>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="bg-green-100 p-1 rounded">
-                      <MessageCircle className="h-3 w-3 text-green-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">React Developer Position - Remote</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Looking for a senior React developer to join our growing team at TechCorp.</p>
-                  <p className="text-xs text-gray-500 mt-2">1 week ago</p>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="bg-purple-100 p-1 rounded">
-                      <MessageCircle className="h-3 w-3 text-purple-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">TypeScript Fundamentals Guide</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Comprehensive guide covering TypeScript basics for JavaScript developers.</p>
-                  <p className="text-xs text-gray-500 mt-2">2 weeks ago</p>
                 </div>
               </div>
             </div>

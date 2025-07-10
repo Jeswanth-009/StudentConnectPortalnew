@@ -180,7 +180,10 @@ class ApiService {
   async addReply(postId: string, content: string) {
     const response = await fetch(`${API_BASE_URL}/posts/${postId}/replies`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ content }),
     });
     return this.handleResponse(response);
