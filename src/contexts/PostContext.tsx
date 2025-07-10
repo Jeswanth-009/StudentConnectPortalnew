@@ -174,13 +174,57 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const filterPosts = (query: string, category?: string) => {
-    // If we have search/filter criteria, fetch from API
-    if (query.trim() || (category && category !== 'all')) {
-      apiService.getPosts({ search: query, category }).then(loadPosts);
+  const filterPosts = async (query: string, category?: string) => {
+    // If no search query and category is 'all', reset to original posts
+    if (!query.trim() && (!category || category === 'all')) {
+      setFilteredPosts(posts);
       return;
     }
     
+    // If we have search/filter criteria, fetch from API
+    if (query.trim() || (category && category !== 'all')) {
+      try {
+        setIsLoading(true);
+        const filteredData = await apiService.getPosts({ search: query, category });
+        const formattedPosts = filteredData.map((post: any) => ({
+          id: post.id,
+          authorId: post.author_id,
+          authorName: post.author_name,
+          authorUsername: post.author_username,
+          authorProfilePicture: post.author_profile_picture,
+          type: post.type,
+          title: post.title,
+          content: post.content,
+          tags: post.tags,
+          documentUrl: post.document_url,
+          documentName: post.document_name,
+          jobLink: post.job_link,
+          company: post.company,
+          location: post.location,
+          replies: post.replies?.map((reply: any) => ({
+            id: reply.id,
+            authorId: reply.author_id,
+            authorName: reply.author_name,
+            authorUsername: reply.author_username,
+            authorProfilePicture: reply.author_profile_picture,
+            content: reply.content,
+            createdAt: new Date(reply.created_at)
+          })) || [],
+          createdAt: new Date(post.created_at),
+          updatedAt: new Date(post.updated_at)
+        }));
+        
+        setFilteredPosts(formattedPosts);
+      } catch (error) {
+        console.error('Failed to filter posts:', error);
+        setFilteredPosts([]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+    
+    // Local filtering when no search/filter criteria
     let filtered = posts;
     if (category && category !== 'all') {
       filtered = filtered.filter(post => post.type === category);

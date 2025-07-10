@@ -10,14 +10,14 @@ const PostsTab: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    filterPosts(query, selectedCategory);
+    await filterPosts(query, selectedCategory);
   };
 
-  const handleCategoryChange = (category: string) => {
+  const handleCategoryChange = async (category: string) => {
     setSelectedCategory(category);
-    filterPosts(searchQuery, category);
+    await filterPosts(searchQuery, category);
   };
 
   const sortedPosts = [...filteredPosts].sort((a, b) => {
