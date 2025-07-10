@@ -44,7 +44,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ### Step 3: Deploy and Get Backend URL
 
 After deployment, your backend will be available at:
-`https://studyconnect-backend.onrender.com`
+`https://studentconnectportalnew.onrender.com`
 
 ## Frontend Deployment
 
@@ -65,10 +65,10 @@ After deployment, your backend will be available at:
 In your Render frontend service settings, add this environment variable:
 
 ```
-VITE_API_URL=https://studyconnect-backend.onrender.com
+VITE_API_URL=https://studentconnectportalnew.onrender.com
 ```
 
-Replace `studyconnect-backend` with your actual backend service name.
+Replace `studentconnectportalnew` with your actual backend service name.
 
 ## Update CORS Settings
 
@@ -111,7 +111,7 @@ The following template files have been created for your reference:
 
 ## Verification
 
-1. Check backend health: `https://your-backend.onrender.com/docs`
+1. Check backend health: `https://studentconnectportalnew.onrender.com/docs`
 2. Check frontend: `https://your-frontend.onrender.com`
 3. Test API calls from frontend to backend
 

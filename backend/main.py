@@ -25,6 +25,7 @@ app.add_middleware(
         "http://localhost:5173", 
         "https://student-connect-portalnew.vercel.app",
         "https://*.onrender.com",
+        "https://studentconnectportalnew.onrender.com",
         os.getenv("FRONTEND_URL", "http://localhost:5173")
     ],
     allow_credentials=True,
