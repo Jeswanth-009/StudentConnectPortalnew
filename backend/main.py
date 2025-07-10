@@ -162,6 +162,29 @@ def send_reset_email(email: str, reset_token: str):
 async def root():
     return {"message": "StudyConnect API is running!"}
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint that tests database connectivity"""
+    try:
+        # Test database connection by listing collections
+        collections = await db.list_collection_names()
+        
+        # Count documents in users collection
+        user_count = await db.users.count_documents({})
+        
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "collections": collections,
+            "user_count": user_count,
+            "mongodb_url": MONGODB_URL.split("@")[-1] if "@" in MONGODB_URL else "localhost"  # Hide credentials
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=503, 
+            detail=f"Database connection failed: {str(e)}"
+        )
+
 @app.post("/auth/signup", response_model=dict)
 async def signup(user: UserCreate):
     # Check if user already exists
