@@ -3,11 +3,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://studentconnectport
 // Debug: Log the API URL being used
 console.log('API_BASE_URL:', API_BASE_URL);
 
-interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-}
-
+// The main API service class that handles all API requests
 class ApiService {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('authToken');
@@ -192,6 +188,15 @@ class ApiService {
   // User endpoints
   async getUserProfile(userId: string) {
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
+  // System endpoints
+  async healthCheck() {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
       headers: this.getAuthHeaders(),
     });
     return this.handleResponse(response);

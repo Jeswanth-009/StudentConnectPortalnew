@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Bell, Search, Plus, LogOut, Settings, User, Users } from 'lucide-react';
+import { Bell, Plus, LogOut, Settings, User, Users } from 'lucide-react';
 
 interface HeaderProps {
   onCreatePost: () => void;
