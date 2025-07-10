@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePost } from '../../contexts/PostContext';
 import { apiService } from '../../services/api';
-import { Edit2, Mail, Calendar, MapPin, Link, Camera } from 'lucide-react';
+import { Edit2, Mail, Calendar, MapPin, Link, Camera, FileText, Building, MessageCircle, Clock } from 'lucide-react';
 import EditProfileModal from './EditProfileModal';
 
 const ProfileTab: React.FC = () => {
@@ -171,6 +171,86 @@ const ProfileTab: React.FC = () => {
                   <p className="text-sm text-orange-800">Jobs Posted</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Recent Posts */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Posts</h3>
+            <div className="space-y-3">
+              {posts && posts
+                .filter(post => post.authorId === user.id)
+                .slice(0, 3)
+                .map((post) => {
+                  const getPostIcon = () => {
+                    switch (post.type) {
+                      case 'note':
+                        return <FileText className="h-4 w-4 text-blue-600" />;
+                      case 'job':
+                        return <Building className="h-4 w-4 text-green-600" />;
+                      case 'thread':
+                        return <MessageCircle className="h-4 w-4 text-purple-600" />;
+                      default:
+                        return <FileText className="h-4 w-4 text-gray-600" />;
+                    }
+                  };
+
+                  const getTypeLabel = () => {
+                    switch (post.type) {
+                      case 'note': return 'Note';
+                      case 'job': return 'Job';
+                      case 'thread': return 'Thread';
+                      default: return 'Post';
+                    }
+                  };
+
+                  const formatDate = (date: Date) => {
+                    const now = new Date();
+                    const diff = now.getTime() - date.getTime();
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const days = Math.floor(hours / 24);
+                    
+                    if (days > 0) {
+                      return `${days} day${days > 1 ? 's' : ''} ago`;
+                    } else if (hours > 0) {
+                      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+                    } else {
+                      return 'Just now';
+                    }
+                  };
+
+                  return (
+                    <div key={post.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="bg-white p-2 rounded-lg border">
+                        {getPostIcon()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-medium text-gray-900 truncate">{post.title}</p>
+                          <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                            {getTypeLabel()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDate(post.createdAt)}</span>
+                          {post.replies && post.replies.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span>{post.replies.length} replies</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              
+              {(!posts || posts.filter(post => post.authorId === user.id).length === 0) && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No posts yet. Start sharing your content!</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
