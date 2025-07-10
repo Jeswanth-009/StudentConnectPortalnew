@@ -95,6 +95,7 @@ class PostCreate(BaseModel):
     job_link: Optional[str] = None
     document_name: Optional[str] = None
     document_url: Optional[str] = None
+    download_url: Optional[str] = None
 
 class ReplyCreate(BaseModel):
     content: str
@@ -380,11 +381,21 @@ async def upload_document(file: UploadFile = File(...), current_user: dict = Dep
             file.file,
             folder="studyconnect/documents",
             resource_type="auto",
-            public_id=f"doc_{current_user['_id']}_{int(datetime.utcnow().timestamp())}",
-            # Add flags to support downloads
+            public_id=f"doc_{current_user['_id']}_{int(datetime.utcnow().timestamp())}"
+        )
+        
+        # Generate download URL with fl_attachment transformation
+        public_id = result["public_id"]
+        download_url = cloudinary.CloudinaryImage(public_id).build_url(
+            resource_type="auto",
             flags="attachment"
         )
-        return {"url": result["secure_url"], "name": file.filename}
+        
+        return {
+            "url": result["secure_url"], 
+            "download_url": download_url,
+            "name": file.filename
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
@@ -404,6 +415,7 @@ async def create_post(post: PostCreate, current_user: dict = Depends(get_current
         "job_link": post.job_link,
         "document_name": post.document_name,
         "document_url": post.document_url,
+        "download_url": post.download_url,
         "replies": [],
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
@@ -522,12 +534,28 @@ async def download_document(document_url: str):
         
         # For Cloudinary URLs, we need to modify them to force download
         if 'cloudinary.com' in decoded_url:
-            # Transform Cloudinary URL to force download
-            # Replace /upload/ with /upload/fl_attachment/
-            if '/upload/' in decoded_url:
-                download_url = decoded_url.replace('/upload/', '/upload/fl_attachment/')
-            else:
-                # Add download flag as URL parameter
+            # Extract the public_id from the URL
+            # URL format: https://res.cloudinary.com/cloud/resource_type/upload/version/public_id.extension
+            url_parts = decoded_url.split('/')
+            
+            # Find the upload index
+            try:
+                upload_index = url_parts.index('upload')
+                # Get everything after upload/ as the public_id path
+                public_id_parts = url_parts[upload_index + 1:]
+                
+                # Remove version if present (starts with v followed by numbers)
+                if public_id_parts and public_id_parts[0].startswith('v') and public_id_parts[0][1:].isdigit():
+                    public_id_parts = public_id_parts[1:]
+                
+                public_id = '/'.join(public_id_parts)
+                
+                # Rebuild URL with fl_attachment parameter
+                base_url = '/'.join(url_parts[:upload_index + 1])
+                download_url = f"{base_url}/fl_attachment/{public_id}"
+                
+            except (ValueError, IndexError):
+                # Fallback: add as URL parameter
                 if '?' in decoded_url:
                     download_url = f"{decoded_url}&fl_attachment"
                 else:

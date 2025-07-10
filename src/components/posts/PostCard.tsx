@@ -57,13 +57,16 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const handleDownload = async () => {
     if (post.documentUrl) {
       try {
-        let downloadUrl = post.documentUrl;
+        // Use download_url if available, otherwise use regular URL
+        let downloadUrl = (post as any).download_url || post.documentUrl;
         
-        // If it's a Cloudinary URL, modify it to force download
-        if (post.documentUrl.includes('cloudinary.com')) {
-          // Transform Cloudinary URL to force download
-          if (post.documentUrl.includes('/upload/')) {
-            downloadUrl = post.documentUrl.replace('/upload/', '/upload/fl_attachment/');
+        // If it's a regular Cloudinary URL, try to transform it
+        if (!((post as any).download_url) && post.documentUrl.includes('cloudinary.com')) {
+          // Simple approach: add fl_attachment as URL parameter
+          if (post.documentUrl.includes('?')) {
+            downloadUrl = `${post.documentUrl}&fl_attachment`;
+          } else {
+            downloadUrl = `${post.documentUrl}?fl_attachment`;
           }
         }
         
@@ -72,7 +75,6 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         link.href = downloadUrl;
         link.download = post.documentName || 'document';
         link.target = '_blank';
-        // Add attributes to ensure download
         link.rel = 'noopener noreferrer';
         document.body.appendChild(link);
         link.click();
