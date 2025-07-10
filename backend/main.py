@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
@@ -15,6 +15,8 @@ import cloudinary.uploader
 from bson import ObjectId
 import secrets
 import urllib.parse
+import httpx
+import mimetypes
 
 # Initialize FastAPI
 app = FastAPI(title="StudyConnect API", version="1.0.0")
@@ -526,46 +528,60 @@ async def get_user_profile(user_id: str):
 @app.get("/download/{document_url:path}")
 async def download_document(document_url: str):
     """
-    Endpoint to handle document downloads with proper headers
+    Endpoint to fetch file from Cloudinary and stream it with proper headers for download
     """
     try:
         # Decode the URL if it's URL encoded
         decoded_url = urllib.parse.unquote(document_url)
         
-        # For Cloudinary URLs, we need to modify them to force download
+        # Extract filename from URL for proper headers
+        filename = decoded_url.split('/')[-1]
+        if '?' in filename:
+            filename = filename.split('?')[0]
+        
+        # Determine content type
+        content_type, _ = mimetypes.guess_type(filename)
+        if not content_type:
+            content_type = 'application/octet-stream'
+        
+        # For Cloudinary URLs, ensure we get the file in the best format
         if 'cloudinary.com' in decoded_url:
-            # Extract the public_id from the URL
-            # URL format: https://res.cloudinary.com/cloud/resource_type/upload/version/public_id.extension
-            url_parts = decoded_url.split('/')
-            
-            # Find the upload index
-            try:
-                upload_index = url_parts.index('upload')
-                # Get everything after upload/ as the public_id path
-                public_id_parts = url_parts[upload_index + 1:]
-                
-                # Remove version if present (starts with v followed by numbers)
-                if public_id_parts and public_id_parts[0].startswith('v') and public_id_parts[0][1:].isdigit():
-                    public_id_parts = public_id_parts[1:]
-                
-                public_id = '/'.join(public_id_parts)
-                
-                # Rebuild URL with fl_attachment parameter
-                base_url = '/'.join(url_parts[:upload_index + 1])
-                download_url = f"{base_url}/fl_attachment/{public_id}"
-                
-            except (ValueError, IndexError):
-                # Fallback: add as URL parameter
-                if '?' in decoded_url:
-                    download_url = f"{decoded_url}&fl_attachment"
-                else:
-                    download_url = f"{decoded_url}?fl_attachment"
+            # Don't modify the URL, just fetch it as-is for better compatibility
+            fetch_url = decoded_url
         else:
-            download_url = decoded_url
+            fetch_url = decoded_url
         
-        # Redirect to the download URL
-        return RedirectResponse(url=download_url, status_code=302)
+        # Fetch the file from the URL
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(fetch_url)
+            response.raise_for_status()
+            
+            # Create headers for proper download
+            headers = {
+                'Content-Type': content_type,
+                'Content-Disposition': f'attachment; filename="{filename}"',
+                'Content-Length': str(len(response.content)),
+                'Cache-Control': 'no-cache'
+            }
+            
+            # Create a generator to stream the content
+            async def generate():
+                # Split content into chunks for streaming
+                chunk_size = 8192
+                content = response.content
+                for i in range(0, len(content), chunk_size):
+                    yield content[i:i + chunk_size]
+            
+            return StreamingResponse(
+                generate(),
+                media_type=content_type,
+                headers=headers
+            )
         
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Failed to fetch document: {str(e)}")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
 
