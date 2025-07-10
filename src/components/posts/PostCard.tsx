@@ -54,15 +54,34 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (post.documentUrl) {
-      const link = document.createElement('a');
-      link.href = post.documentUrl;
-      link.download = post.documentName || 'document';
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        let downloadUrl = post.documentUrl;
+        
+        // If it's a Cloudinary URL, modify it to force download
+        if (post.documentUrl.includes('cloudinary.com')) {
+          // Transform Cloudinary URL to force download
+          if (post.documentUrl.includes('/upload/')) {
+            downloadUrl = post.documentUrl.replace('/upload/', '/upload/fl_attachment/');
+          }
+        }
+        
+        // Create a download link
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = post.documentName || 'document';
+        link.target = '_blank';
+        // Add attributes to ensure download
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('Download failed:', error);
+        // Fallback: open in new tab
+        window.open(post.documentUrl, '_blank');
+      }
     }
   };
 

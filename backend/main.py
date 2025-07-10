@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
@@ -14,6 +14,7 @@ import cloudinary
 import cloudinary.uploader
 from bson import ObjectId
 import secrets
+import urllib.parse
 
 # Initialize FastAPI
 app = FastAPI(title="StudyConnect API", version="1.0.0")
@@ -374,12 +375,14 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
 @app.post("/upload/document")
 async def upload_document(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     try:
-        # Upload to Cloudinary
+        # Upload to Cloudinary with resource_type auto for documents
         result = cloudinary.uploader.upload(
             file.file,
             folder="studyconnect/documents",
             resource_type="auto",
-            public_id=f"doc_{current_user['_id']}_{int(datetime.utcnow().timestamp())}"
+            public_id=f"doc_{current_user['_id']}_{int(datetime.utcnow().timestamp())}",
+            # Add flags to support downloads
+            flags="attachment"
         )
         return {"url": result["secure_url"], "name": file.filename}
     except Exception as e:
@@ -507,6 +510,36 @@ async def get_user_profile(user_id: str):
         "created_at": user["created_at"],
         "posts_count": posts_count
     }
+
+@app.get("/download/{document_url:path}")
+async def download_document(document_url: str):
+    """
+    Endpoint to handle document downloads with proper headers
+    """
+    try:
+        # Decode the URL if it's URL encoded
+        decoded_url = urllib.parse.unquote(document_url)
+        
+        # For Cloudinary URLs, we need to modify them to force download
+        if 'cloudinary.com' in decoded_url:
+            # Transform Cloudinary URL to force download
+            # Replace /upload/ with /upload/fl_attachment/
+            if '/upload/' in decoded_url:
+                download_url = decoded_url.replace('/upload/', '/upload/fl_attachment/')
+            else:
+                # Add download flag as URL parameter
+                if '?' in decoded_url:
+                    download_url = f"{decoded_url}&fl_attachment"
+                else:
+                    download_url = f"{decoded_url}?fl_attachment"
+        else:
+            download_url = decoded_url
+        
+        # Redirect to the download URL
+        return RedirectResponse(url=download_url, status_code=302)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
