@@ -1,11 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePost } from '../../contexts/PostContext';
+import { apiService } from '../../services/api';
 import { Edit2, Mail, Calendar, MapPin, Link, Camera } from 'lucide-react';
 import EditProfileModal from './EditProfileModal';
 
 const ProfileTab: React.FC = () => {
   const { user } = useAuth();
+  const { posts } = usePost();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [userStats, setUserStats] = useState({
+    posts_count: 0,
+    notes_count: 0,
+    jobs_count: 0,
+    threads_count: 0
+  });
+
+  useEffect(() => {
+    if (user && posts) {
+      // Calculate user statistics from posts
+      const userPosts = posts.filter(post => post.authorId === user.id);
+      const notes_count = userPosts.filter(post => post.type === 'note').length;
+      const jobs_count = userPosts.filter(post => post.type === 'job').length;
+      const threads_count = userPosts.filter(post => post.type === 'thread').length;
+      
+      setUserStats({
+        posts_count: userPosts.length,
+        notes_count,
+        jobs_count,
+        threads_count
+      });
+    }
+  }, [user, posts]);
 
   if (!user) return null;
 
@@ -24,11 +50,19 @@ const ProfileTab: React.FC = () => {
           {/* Profile Picture and Basic Info */}
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12 mb-6">
             <div className="relative">
-              <img
-                src={user.profilePicture || `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400`}
-                alt={user.name}
-                className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
-              />
+              {user.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt={user.name}
+                  className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-gray-300 border-4 border-white shadow-lg flex items-center justify-center">
+                  <span className="text-gray-600 font-bold text-2xl">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
               <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors">
                 <Camera className="h-3 w-3" />
               </button>
@@ -81,7 +115,12 @@ const ProfileTab: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Joined</p>
-                    <p className="font-medium text-gray-900">January 2024</p>
+                    <p className="font-medium text-gray-900">
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      }) : 'Not available'}
+                    </p>
                   </div>
                 </div>
 
@@ -113,59 +152,23 @@ const ProfileTab: React.FC = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-2xl font-bold text-blue-600">12</p>
+                  <p className="text-2xl font-bold text-blue-600">{userStats.posts_count}</p>
                   <p className="text-sm text-blue-800">Posts Created</p>
                 </div>
                 
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <p className="text-2xl font-bold text-green-600">45</p>
+                  <p className="text-2xl font-bold text-green-600">0</p>
                   <p className="text-sm text-green-800">Comments</p>
                 </div>
                 
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <p className="text-2xl font-bold text-purple-600">8</p>
+                  <p className="text-2xl font-bold text-purple-600">{userStats.notes_count}</p>
                   <p className="text-sm text-purple-800">Notes Shared</p>
                 </div>
                 
                 <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                  <p className="text-2xl font-bold text-orange-600">3</p>
+                  <p className="text-2xl font-bold text-orange-600">{userStats.jobs_count}</p>
                   <p className="text-sm text-orange-800">Jobs Posted</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <Edit2 className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Created a new note</p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <Edit2 className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Commented on a thread</p>
-                  <p className="text-xs text-gray-500">5 hours ago</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="bg-purple-100 p-2 rounded-lg">
-                  <Edit2 className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Posted a job opportunity</p>
-                  <p className="text-xs text-gray-500">1 day ago</p>
                 </div>
               </div>
             </div>

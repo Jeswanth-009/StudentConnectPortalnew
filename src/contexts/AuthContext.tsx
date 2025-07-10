@@ -8,6 +8,7 @@ interface User {
   email: string;
   bio: string;
   profilePicture?: string;
+  createdAt?: string;
 }
 
 interface AuthContextType {
@@ -75,7 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: userData.username,
         email: userData.email,
         bio: userData.bio,
-        profilePicture: userData.profile_picture
+        profilePicture: userData.profile_picture,
+        createdAt: userData.created_at
       });
       
       localStorage.setItem('authToken', access_token);
@@ -99,7 +101,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: newUserData.username,
         email: newUserData.email,
         bio: newUserData.bio,
-        profilePicture: newUserData.profile_picture
+        profilePicture: newUserData.profile_picture,
+        createdAt: newUserData.created_at
       };
       
       setUser(newUser);

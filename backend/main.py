@@ -318,7 +318,8 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         "username": current_user["username"],
         "email": current_user["email"],
         "bio": current_user["bio"],
-        "profile_picture": current_user["profile_picture"]
+        "profile_picture": current_user["profile_picture"],
+        "created_at": current_user["created_at"]
     }
 
 @app.put("/auth/profile")
